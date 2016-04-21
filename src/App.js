@@ -55,26 +55,6 @@ let defaultState = {
   secret: 300,
 }
 
-function gcd(a, b) {
-  if (b == 0) {
-    return a;
-  } else {
-    return gcd(b, a % b);
-  }
-}
-
-function xgcd(a, b) {
-  if (b == 0) {
-    return [1, 0, a];
-  } else {
-    var temp = xgcd(b, a % b);
-    var x =
-      temp[0];
-    var y = temp[1];
-    var d = temp[2];
-    return [y, x - y * Math.floor(a / b), d];
-  }
-}
 function agentsActions(state = [], action) {
   switch (action.type) {
     case actions.FLIP_AGENT:
@@ -330,6 +310,27 @@ function getModsCps(state) {
   return [mods, cps];
 }
 
+function gcd(a, b) {
+  if (b == 0) {
+    return a;
+  } else {
+    return gcd(b, a % b);
+  }
+}
+
+function xgcd(a, b) {
+  if (b == 0) {
+    return [1, 0, a];
+  } else {
+    var temp = xgcd(b, a % b);
+    var x =
+      temp[0];
+    var y = temp[1];
+    var d = temp[2];
+    return [y, x - y * Math.floor(a / b), d];
+  }
+}
+
 function calculateSum(state) {
   let modsCps = getModsCps(state);
   let mods = modsCps[0], cps = modsCps[1];
@@ -460,4 +461,3 @@ export default class App extends Component {
     );
   }
 }
-
