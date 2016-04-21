@@ -248,7 +248,7 @@ const floatLeft = {
 function getSecretValueRange(state) {
   let coPrimes = state.coPrimes.slice(0);
   let arr = coPrimes.sort((a, b) => { return a - b });
-  return [arr[0] * arr[1] * arr[2], arr[2] * arr[3] * arr[4]];
+  return [arr[3] * arr[4], arr[0] * arr[1] * arr[2]];
 }
 
 class AgentStatusTable extends Component {
@@ -310,9 +310,9 @@ class AgentStatusTable extends Component {
 }
 
 function getAgentsCount(state) {
-   let agents = state.agents;
-   let active = agents.filter(v => v).length;
-   return active;
+  let agents = state.agents;
+  let active = agents.filter(v => v).length;
+  return active;
 }
 
 function getModsCps(state) {
@@ -334,13 +334,23 @@ function calculateSum(state) {
   let modsCps = getModsCps(state);
   let mods = modsCps[0], cps = modsCps[1];
   let p = cps[0], q = cps[1], r = cps[2],
-      a = mods[0], b = mods[1], c = mods[2];
+    a = mods[0], b = mods[1], c = mods[2];
   let qr1 = xgcd(q * r, p)[0],
-      pr1 = xgcd(p * r, q)[0],
-      pq1 = xgcd(p * q, r)[0];
-  return a * qr1 * (q * r) + 
-         b * pr1 * (p * r) +
-         c * pq1 * (p * q);
+    pr1 = xgcd(p * r, q)[0],
+    pq1 = xgcd(p * q, r)[0];
+  return a * qr1 * (q * r) +
+    b * pr1 * (p * r) +
+    c * pq1 * (p * q);
+}
+
+function calculateTwoSum(state) {
+  let modsCps = getModsCps(state);
+  let mods = modsCps[0], cps = modsCps[1];
+  let p = cps[0], q = cps[1],
+    a = mods[0], b = mods[1];
+  let q1 = xgcd(q, p)[0],
+    p1 = xgcd(p, q)[0];
+  return a * q * q1 + b * p * p1;
 }
 
 function superMod(a, b) {
@@ -373,21 +383,57 @@ class StatusTable extends Component {
           </TableBody>
         </Table>
         <CardText>
-          <Latex>{"$$a = " + getModsCps(this.state)[0][0] + 
+          {(() => {
+            if (getAgentsCount(this.state) >= 3) {
+              return (<div>
+                <Latex>{"$$a = " + getModsCps(this.state)[0][0] +
                   ", b = " + getModsCps(this.state)[0][1] +
                   ", c = " + getModsCps(this.state)[0][2] +
                   "$$"}</Latex> <br/>
-          <Latex>{"$$p = " + getModsCps(this.state)[1][0] + 
+                <Latex>{"$$p = " + getModsCps(this.state)[1][0] +
                   ", q = " + getModsCps(this.state)[1][1] +
                   ", r = " + getModsCps(this.state)[1][2] +
                   "$$"}</Latex> <br/>
-          <Latex>{"$$a (q\\cdot r)^{-1_{p}}(q\\cdot r) +$$"}</Latex> <br/>
-          <Latex>{"$$b (q\\cdot r)^{-1_{q}}(q\\cdot r) +$$"}</Latex> <br/>
-          <Latex>{"$$c (p\\cdot q)^{-1_{r}}(p\\cdot q) = " + calculateSum(this.state) + "$$"}</Latex> <br/>
-          
-          <Latex>{"$$" + calculateSum(this.state) + "\\, \\text{mod} \\," + "(p\\cdot q \\cdot r) = " + 
-          superMod(calculateSum(this.state), cps[0] * cps[1] * cps[2]) + "$$"}</Latex>
+                <Latex>{"$$a (q\\cdot r)^{-1_{p}}(q\\cdot r) +$$"}</Latex> <br/>
+                <Latex>{"$$b (q\\cdot r)^{-1_{q}}(q\\cdot r) +$$"}</Latex> <br/>
+                <Latex>{"$$c (p\\cdot q)^{-1_{r}}(p\\cdot q) = " + calculateSum(this.state) + "$$"}</Latex> <br/>
+
+                <Latex>{"$$" + calculateSum(this.state) + "\\, \\text{mod} \\," + "(p\\cdot q \\cdot r) = " +
+                  superMod(calculateSum(this.state), cps[0] * cps[1] * cps[2]) + "$$"}</Latex>
+              </div>);
+            } else {
+              return (<div>
+                <Latex>{"$$a = " + getModsCps(this.state)[0][0] +
+                  ", b = " + getModsCps(this.state)[0][1] +
+                  "$$"}</Latex> <br/>
+                <Latex>{"$$p = " + getModsCps(this.state)[1][0] +
+                  ", q = " + getModsCps(this.state)[1][1] +
+                  "$$"}</Latex> <br/>
+                <Latex>{"$$a q^{-1_{p}}q +$$"}</Latex> <br/>
+                <Latex>{"$$b p^{-1_{q}}p =" + calculateTwoSum(this.state) + "$$"}</Latex> <br/>
+
+                <Latex>{"$$" + calculateTwoSum(this.state) + "\\, \\text{mod} \\," + "(p\\cdot q) = " +
+                  superMod(calculateTwoSum(this.state), cps[0] * cps[1]) + "$$"}</Latex>
+              </div>);
+            }
+
+          })() }
         </CardText>
+        <div style={{ width: "100%", textAlign: "center", marginBottom: 20 }}>
+          {(() => {
+            var decryptedValue = 0;
+            if (getAgentsCount(this.state) >= 3) {
+              decryptedValue = superMod(calculateSum(this.state), cps[0] * cps[1] * cps[2]);
+            } else {
+              decryptedValue = superMod(calculateTwoSum(this.state), cps[0] * cps[1]);
+            }
+            if (decryptedValue != this.state.secret) {
+              return <RaisedButton primary={true} label="Decryption Failed" />;
+            } else {
+              return <RaisedButton secondary={true} label="Decryption Successful" />;
+            }
+          })() }
+        </div>
       </Card>
     );
   }
